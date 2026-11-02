@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prex · Inventario de servidores</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+  <script src="/static/v2.js" defer></script>
+</head>
+<body>
+  <header><span class="brand">PREX <span>/ INVENTARIO</span></span><span class="badge">Consulta local</span></header>
+  <main>
+    <p class="eyebrow">RELEVAMIENTO DE SERVIDORES</p>
+    <h1>Inventario y evolución</h1>
+    <p class="intro">El agente recolecta en el equipo, envía a la API y esta pantalla consulta lo recibido.</p>
+    <nav class="version-tabs" aria-label="Versiones">
+      <button id="v1-tab" aria-pressed="true">V1 · Challenge</button>
+      <button id="v2-tab" aria-pressed="false">V2 · Ampliada</button>
+    </nav>
+    <section class="version-description" aria-label="Alcance de la versión">
+      <h2 id="version-title">Los cinco datos solicitados</h2>
+      <p id="version-description">Procesador, procesos corriendo, usuarios con sesión abierta, nombre y versión del sistema operativo. Consulta del último envío por IP y descarga JSON.</p>
+    </section>
+    <nav id="views" aria-label="Vistas ampliadas" hidden><button id="dashboard-tab" aria-pressed="false">Dashboard</button><button id="current-tab" aria-pressed="true">Último relevamiento</button><button id="history-tab" aria-pressed="false">Histórico y comparación</button></nav>
+    <section id="search-card" class="card" aria-label="Búsqueda">
+      <form id="search">
+        <label>Dirección IPv4<input id="ip" required value="127.0.0.1" spellcheck="false"></label>
+        <button type="submit">Consultar guardado</button><button type="button" class="secondary" id="clear">Limpiar resultados</button>
+      </form>
+      <p class="hint">Consultar lee información guardada. Para obtener datos nuevos, ejecutá el agente en el equipo o esperá su próxima ejecución programada.</p>
+    </section>
+    <p id="status" role="status" aria-live="polite">Ingresá una IPv4 para consultar su último envío.</p>
+    <section id="dashboard" hidden>
+      <form id="dashboard-filter" class="toolbar">
+        <label>Tiempo máximo sin recibir un inventario (horas)<input id="stale-hours" type="number" min="1" max="168" step="1" value="2" aria-describedby="stale-help stale-scope" required></label>
+        <button type="submit">Aplicar y actualizar</button>
+      </form>
+      <p id="stale-help" class="hint" aria-live="polite"></p>
+      <p id="stale-scope" class="hint">Este límite solo clasifica los equipos del dashboard. La frecuencia de envío se configura en la tarea programada del agente.</p>
+      <div id="dashboard-summary" class="facts dashboard-facts"></div>
+      <p id="dashboard-time" class="hint"></p>
+      <p class="hint">La vigencia indica cuándo llegó el último envío. Un equipo sin reportes recientes puede estar apagado, desconectado o tener el agente detenido. Solo se conocen los equipos que ya reportaron.</p>
+      <section class="card requirement"><h3>Equipos registrados</h3>
+        <div class="scroll"><table><thead><tr><th>Equipo / IP</th><th>Sistema operativo</th><th>Última recepción (UTC)</th><th>Vigencia</th><th>Procesos / sesiones</th><th>Avisos</th><th>Detalle</th></tr></thead><tbody id="host-rows"></tbody></table></div>
+        <div class="pager"><button id="hosts-previous" class="secondary">Equipos anteriores</button><span id="hosts-page"></span><button id="hosts-next" class="secondary">Equipos siguientes</button></div>
+      </section>
+      <section class="card"><h3>Distribución por sistema operativo</h3><p class="hint">Último nombre informado por cada IP.</p>
+        <table><thead><tr><th>Sistema operativo</th><th>Equipos</th></tr></thead><tbody id="system-rows"></tbody></table>
+      </section>
+    </section>
+
+    <section id="history" class="card" hidden>
+      <h2>Histórico y comparación</h2>
+      <p class="hint">Elegí una captura base y otra recibida después. La selección se conserva al cambiar de página o filtrar por fecha.</p>
+      <div class="selection"><div><strong>Base</strong><p id="selected-before">Sin seleccionar</p></div><div><strong>Comparado</strong><p id="selected-after">Sin seleccionar</p></div><button id="compare" disabled>Comparar selección</button></div>
+      <div class="toolbar"><label>Fecha de recepción (UTC)<input id="day" type="date"></label><button id="filter">Filtrar</button></div>
+      <div class="scroll"><table><thead><tr><th>Recepción (UTC)</th><th>Equipo</th><th>Relevamiento</th></tr></thead><tbody id="history-rows"></tbody></table></div>
+      <div class="pager"><button id="previous" class="secondary">Anterior</button><span id="page"></span><button id="next" class="secondary">Siguiente</button></div>
+    </section>
+    <section id="comparison" class="card" hidden>
+      <div class="report-heading"><h2>Comparación de relevamientos</h2><div class="export-actions"><a id="export-csv" class="button secondary">Descargar CSV</a><a id="export-html" class="button secondary" target="_blank" rel="noopener">Informe / PDF</a></div></div>
+      <h3 id="comparison-title"></h3><p id="comparison-source" class="hint"></p>
+      <div id="comparison-summary" class="facts"></div>
+      <p id="change-count" class="hint"></p>
+      <div class="scroll data"><table><thead><tr><th>Sección</th><th>Dato</th><th>Base</th><th>Comparado</th></tr></thead><tbody id="change-rows"></tbody></table></div>
+      <h3 class="notes-heading">Criterios y observaciones</h3><ul id="comparison-notes"></ul>
+    </section>
+
+    <section id="report" hidden>
+      <div class="report-heading"><h2 id="report-title"></h2><button id="download" class="secondary">Descargar JSON</button></div>
+      <p id="timestamps" class="hint"></p>
+      <p id="report-context" class="hint"></p>
+      <div id="summary" class="facts" hidden></div>
+      <section class="card requirement">
+        <h3>1. Información sobre el procesador</h3>
+        <dl id="cpu" class="cpu-grid"></dl>
+      </section>
+      <section class="card requirement">
+        <h3>2. Listado de procesos corriendo</h3>
+        <p id="process-count" class="hint"></p>
+        <div class="scroll data"><table><thead><tr><th>PID</th><th>Nombre</th></tr></thead><tbody id="processes"></tbody></table></div>
+      </section>
+      <section class="card requirement">
+        <h3>3. Usuarios con una sesión abierta</h3>
+        <p id="session-count" class="hint"></p>
+        <div class="scroll data"><table><thead><tr><th>Usuario</th><th>Terminal</th><th>Inicio (UTC)</th></tr></thead><tbody id="sessions"></tbody></table></div>
+      </section>
+      <div class="os-grid">
+        <section class="card requirement"><h3>4. Nombre del sistema operativo</h3><p id="os-name" class="os-value"></p></section>
+        <section class="card requirement"><h3>5. Versión del sistema operativo</h3><p id="os-version" class="os-value"></p><p id="os-version-hint" class="hint"></p></section>
+      </div>
+      <section class="card"><h3>Observaciones de recolección</h3><ul id="warnings"></ul></section>
+    </section>
+    <footer>Los datos describen el momento de recolección. Los procesos y las sesiones pueden haber cambiado desde entonces. Un dato no disponible se informa como tal.</footer>
+  </main>
+</body>
+</html>
