@@ -269,35 +269,6 @@ por IP de la sección de ejecución. Dos envíos sucesivos pueden verificarse co
 `GET /history?ip=127.0.0.1&limit=2`; el listado de `/app/data` permite comprobar el
 archivo JSON diario y la base SQLite.
 
-## Pruebas
-
-Desde la raíz, usando el entorno virtual preparado:
-
-```powershell
-.\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.\.venv\Scripts\python.exe -m pytest -q
-.\.venv\Scripts\python.exe -m ruff check .
-.\.venv\Scripts\python.exe -m ruff format --check .
-.\.venv\Scripts\python.exe -m pip check
-```
-
-En Linux, sustituir el ejecutable por `.venv/bin/python`. Las pruebas usan datos
-sintéticos y directorios temporales. Cubren recolección, validación, envío, consultas,
-histórico, persistencia, recuperación de JSON, dashboard y exportaciones.
-
-Verificación realizada el 2 de noviembre de 2026:
-
-- 87 pruebas aprobadas en Windows (Python 3.13.7) y 87 en Ubuntu/WSL (Python 3.12.3).
-- Instalación en un entorno virtual nuevo, dependencias compatibles y Ruff sin errores.
-- Imagen Docker construida desde este repositorio y agentes reales de Windows y Linux
-  enviando a una instancia aislada de la API.
-- JSON diario contrastado con la respuesta por IP, histórico y base normalizada comprobados.
-- Inventarios e IDs conservados al recrear el contenedor con su volumen persistente.
-
-El adaptador de pruebas de Starlette emite un aviso de deprecación sobre HTTPX;
-la suite finaliza correctamente. WSL no representa todas las distribuciones ni
-todos los mecanismos de sesiones de Linux. No se realizaron pruebas de carga de producción.
-
 ## Estructura
 
 ```text
